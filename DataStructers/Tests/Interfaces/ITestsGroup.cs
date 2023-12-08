@@ -1,9 +1,11 @@
 ﻿namespace DataStructers.Tests.Interfaces
 {
-    interface ITests
+    interface ITestsGroup
     {
         string Title { get; }
 
         void Run();
+
+        //event Action<string, TestState> TestCompleted;
     }
 }

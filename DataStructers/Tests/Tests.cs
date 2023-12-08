@@ -2,7 +2,7 @@
 
 namespace DataStructers.Tests
 {
-    abstract class Tests : ITests
+    abstract class Tests : ITestsGroup
     {
         private int _indentCount;
 
@@ -66,5 +66,7 @@ namespace DataStructers.Tests
             Console.ResetColor();
             Console.WriteLine(" ");
         }
+
+        public event Action<string, TestState> TestCompleted;
     }
 }

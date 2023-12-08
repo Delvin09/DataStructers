@@ -1,30 +1,230 @@
 ﻿using DataStructers.Tests;
 using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 
 namespace DataStructers
 {
+    public interface ITestStateEmitter
+    {
+        void Subscribe(ITestStateHandler handler);
+
+        void Unsubscribe(ITestStateHandler handler);
+    }
+
+    public interface ITestStateHandler
+    {
+        void TestStateChanged(string testName, TestState state);
+    }
+
+    public enum TestState
+    {
+        Pending,
+        Success,
+        Failed
+    }
+
+    class ListTestsWithEvents : ITestsGroup, ITestStateEmitter
+    {
+        class TestResult
+        {
+            public string Name { get; init; } = string.Empty;
+
+            public TestState State { get; init; }
+        }
+
+        private readonly System.Collections.Generic.List<ITestStateHandler> _testStateHandlers = new System.Collections.Generic.List<ITestStateHandler>();
+
+        public string Title => "List tests";
+
+        public string[] GetTestList()
+        {
+            return new string[]
+            {
+                nameof(IndexOfIntsInListTest),
+                nameof(NotIndexOfIntsInListTest),
+                nameof(ContainsIntsInListTest)
+            };
+        }
+
+        private Func<TestResult>[] GetTests()
+        {
+            return new Func<TestResult>[] { IndexOfIntsInListTest, NotIndexOfIntsInListTest, ContainsIntsInListTest };
+        }
+
+        public void Run()
+        {
+            foreach (var test in GetTests())
+            {
+                var result = test();
+                OnTestCompleted(result);
+            }
+        }
+
+        private TestResult IndexOfIntsInListTest()
+        {
+            var list = new DataStructures.Lib.List<int>(2);
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+
+            bool isSuccess = list.IndexOf(1) == 0 && list.IndexOf(2) == 1 && list.IndexOf(3) == 2;
+            return new TestResult { Name = nameof(IndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
+
+        private TestResult NotIndexOfIntsInListTest()
+        {
+            var list = new DataStructures.Lib.List<int>(2);
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+
+            bool isSuccess = list.IndexOf(5) < 0;
+            return new TestResult { Name = nameof(NotIndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
+
+        private TestResult ContainsIntsInListTest()
+        {
+            var list = new DataStructures.Lib.List<int>(2);
+            list.Add(1);
+            list.Add(2);
+            list.Add(3);
+
+            bool isSuccess = list.Contains(1) && list.Contains(2) && list.Contains(3);
+            return new TestResult { Name = nameof(ContainsIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
+
+        private void OnTestCompleted(TestResult result)
+        {
+            foreach (var handler in _testStateHandlers)
+            {
+                handler.TestStateChanged(result.Name, result.State);
+            }
+        }
+
+        public void Subscribe(ITestStateHandler handler)
+        {
+            _testStateHandlers.Add(handler);
+        }
+
+        public void Unsubscribe(ITestStateHandler handler)
+        {
+            _testStateHandlers.Remove(handler);
+        }
+    }
+
+    class ConsoleTestRenderer : ITestStateHandler
+    {
+        class TestView
+        {
+            public string? Name { get; init; }
+            public Point Position { get; init; }
+        }
+
+        private readonly ITestsGroup[] _testList;
+        private readonly System.Collections.Generic.List<TestView> _testViews = new System.Collections.Generic.List<TestView>();
+
+        public ConsoleTestRenderer(ITestsGroup[] testList)
+        {
+            this._testList = testList;
+        }
+
+        public void Show()
+        {
+            foreach (var testGroup in _testList)
+            {
+                Console.BackgroundColor = ConsoleColor.Gray;
+                Console.ForegroundColor = ConsoleColor.Black;
+                Console.WriteLine(testGroup.Title);
+                Console.ResetColor();
+
+                foreach (var test in ((ListTestsWithEvents)testGroup).GetTestList())
+                {
+                    Console.Write("  ");
+                    Console.Write($"{test}: ");
+
+                    string? resultMsg = Enum.GetName(TestState.Pending);
+                    Console.BackgroundColor = ConsoleColor.Gray;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    if (Console.CursorLeft < 35)
+                    {
+                        Console.SetCursorPosition(40, Console.CursorTop);
+                    }
+
+                    _testViews.Add(new TestView { Name = test, Position = new Point(Console.CursorLeft, Console.CursorTop) });
+
+                    Console.Write($"{resultMsg}");
+                    Console.ResetColor();
+                    Console.WriteLine(" ");
+                }
+            }
+        }
+
+        public void TestStateChanged(string testName, TestState state)
+        {
+            var testView = _testViews.Find(view => view.Name == testName);
+            if (testView != null)
+            {
+                Point currentPos = new Point(Console.CursorLeft, Console.CursorTop);
+                Console.SetCursorPosition(testView.Position.X, testView.Position.Y);
+
+                if (state == TestState.Success)
+                {
+                    Console.BackgroundColor = ConsoleColor.Green;
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                else
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+
+                Console.Write(Enum.GetName(state)?.ToUpper());
+
+                Console.SetCursorPosition(currentPos.X, currentPos.Y);
+            }
+        }
+    }
+
     internal class Program
     {
         static void Main(string[] args)
         {
+            var list = new DataStructures.Lib.List<string>();
+            list.Add("Sam");
+            list.Add("Bill");
+            list.Add("Samm");
+            list.Add("John");
+            list.Add("Ted");
+
+            var iterator = list
+                .Take(3)
+                .Filter(item => item.StartsWith("Sa"))
+                .GetIterator();
+
+            while (iterator.MoveNext())
+            {
+                Console.WriteLine(iterator.Current);
+            }
+
+
+            var testGroup = new ListTestsWithEvents();
+            var testRenderer = new ConsoleTestRenderer(new ITestsGroup[] { testGroup });
+
+            //testGroup.Subscribe(testRenderer);
+
+            testRenderer.Show();
+            testGroup.Run();
+
+            //====================================================================
+
             //ITests[] tests = { new ListTests(), new LinkedListTests() };
             //foreach (var t in tests)
             //{
             //    t.Run();
             //}
-
-            //Tests();
-
-            //Tests2();
-
-            //Tests3();
-
-            //Tests4();
-
-            //Tests5();
         }
 
         static void Tests2()
@@ -111,38 +311,6 @@ namespace DataStructers
 
         static void Tests3()
         {
-            //var myList = new DataStructures.Lib.List<int>();
-            //Console.WriteLine("List created!");
-
-            //myList.Add(1);
-            //myList.Add(2);
-            //myList.Add(3);
-            //Console.WriteLine("List after adding elements:");
-
-            //PrintList(myList);
-
-            //myList.Insert(1, 4);
-            //Console.WriteLine("List after inserting 4 at index 1:");
-
-            //PrintList(myList);
-
-            //myList.Remove(3);
-            //Console.WriteLine("Contains 3: " + myList.Contains(3));
-
-            //PrintList(myList);
-
-            //myList.Reverse();
-            //Console.WriteLine("List after reversing:");
-
-            //PrintList(myList);
-
-            //Console.WriteLine("Element at index 1: " + myList[1]);
-            //Console.WriteLine("List count: " + myList.Count);
-
-            //myList.Clear();
-            //Console.WriteLine("List after clearing:");
-            //Console.WriteLine("List count after clearing: " + myList.Count);
-
             var binaryTree = new BinaryTree<int>();
 
             binaryTree.Add(1);

@@ -2,7 +2,7 @@
 
 namespace DataStructures.Lib
 {
-    public class LinkedList<T> : ILinkedList<T>
+    public class LinkedList<T> : ILinkedList<T>, IIterable<T>
     {
         protected ILinkedNode<T>? _first;
         protected ILinkedNode<T>? _last;
@@ -164,6 +164,41 @@ namespace DataStructures.Lib
                 index++;
             }
             return result;
+        }
+
+        public IIterator<T> GetIterator()
+        {
+            return new LinkedListIterator<T>(_first);
+        }
+
+        private class LinkedListIterator<TItem> : IIterator<TItem>
+        {
+            private readonly ILinkedNode<TItem> _startNode;
+
+            private ILinkedNode<TItem>? _currentNode;
+
+            public TItem? Current { get; private set; }
+
+            public LinkedListIterator(ILinkedNode<TItem> node)
+            {
+                this._startNode = _currentNode = node;
+            }
+
+            public bool MoveNext()
+            {
+                if (_currentNode != null)
+                {
+                    Current = _currentNode.Data;
+                    _currentNode = _currentNode.Next;
+                    return true;
+                }
+                return false;
+            }
+
+            public void Reset()
+            {
+                _currentNode = _startNode;
+            }
         }
     }
 }
