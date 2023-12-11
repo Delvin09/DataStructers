@@ -1,144 +1,10 @@
 ﻿using DataStructures.Lib.Interfaces;
 using System;
+using System.Collections;
 
 namespace DataStructures.Lib
 {
-    public interface IIterator<out T>
-    {
-        T? Current { get; }
-
-        bool MoveNext();
-
-        void Reset();
-    }
-
-    public interface IIterable<out T>
-    {
-        IIterator<T> GetIterator();
-    }
-
-    public static class MyCoolLinq
-    {
-        private class FileterIterable<T> : IIterable<T>
-        {
-            private readonly IIterable<T> collection;
-            private readonly Predicate<T> predicate;
-
-            public FileterIterable(IIterable<T> collection, Predicate<T> predicate)
-            {
-                this.collection = collection;
-                this.predicate = predicate;
-            }
-
-            public IIterator<T> GetIterator()
-            {
-                return new FilterIterator<T>(collection, predicate);
-            }
-        }
-
-        private class FilterIterator<T> : IIterator<T>
-        {
-            private readonly IIterable<T> _collection;
-            private readonly Predicate<T> _predicate;
-
-            private IIterator<T> _iterator;
-
-            public T? Current => _iterator.Current;
-
-            public FilterIterator(IIterable<T> collection, Predicate<T> predicate)
-            {
-                this._collection = collection;
-                this._predicate = predicate;
-            }
-
-            public bool MoveNext()
-            {
-                if (_iterator == null) _iterator = _collection.GetIterator();
-
-                bool result = false;
-                do
-                {
-                    result = _iterator.MoveNext();
-                    if (result && _predicate(_iterator.Current))
-                    {
-                        return true;
-                    }
-                } while (result);
-
-                return false;
-            }
-
-            public void Reset()
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private class TakeIterable<T> : IIterable<T>
-        {
-            private readonly IIterable<T> collection;
-            private readonly int count;
-
-            public TakeIterable(IIterable<T> collection, int count)
-            {
-                this.collection = collection;
-                this.count = count;
-            }
-
-            public IIterator<T> GetIterator()
-            {
-                return new TakeIterator<T>(collection, count);
-            }
-        }
-
-        private class TakeIterator<T> : IIterator<T>
-        {
-            private readonly IIterable<T> _collection;
-            private readonly int count;
-
-            private IIterator<T> _iterator;
-            private int currentCount;
-
-            public T? Current => _iterator.Current;
-
-            public TakeIterator(IIterable<T> collection, int count)
-            {
-                this._collection = collection;
-                this.count = count;
-            }
-
-            public bool MoveNext()
-            {
-                if (_iterator == null) _iterator = _collection.GetIterator();
-
-                while (_iterator.MoveNext() && currentCount < count)
-                {
-                    currentCount++;
-                    return true;
-                }
-
-                return false;
-            }
-
-            public void Reset()
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public static IIterable<T> Filter<T>(this IIterable<T> iterable, Predicate<T> predicate)
-        {
-            return new FileterIterable<T>(iterable, predicate);
-        }
-
-        public static IIterable<T> Take<T>(this IIterable<T> iterable, int count)
-        {
-            return new TakeIterable<T>(iterable, count);
-        }
-    }
-
-
-    public class List<T> : Interfaces.IList<T>, IIterable<T>
+    public class List<T> : Interfaces.IList<T>, IEnumerable<T>
     {
         private const int defaultCapacity = 4;
 
@@ -184,7 +50,6 @@ namespace DataStructures.Lib
                     throw new ArgumentOutOfRangeException();
                 }
             }
-
             set
             {
                 if (index < Count)
@@ -302,14 +167,21 @@ namespace DataStructures.Lib
             }
         }
 
-        public IIterator<T> GetIterator()
+        public IEnumerator<T> GetEnumerator()
         {
             return new ListIterator<T>(this);
         }
 
-        private class ListIterator<TItem> : IIterator<TItem>
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            public TItem? Current { get; private set; }
+            return GetEnumerator();
+        }
+
+        private class ListIterator<TItem> : IEnumerator<TItem>
+        {
+            public TItem Current { get; private set; }
+
+            object IEnumerator.Current => Current;
 
             private int currentIndex = 0;
             private readonly List<TItem> list;
@@ -317,6 +189,10 @@ namespace DataStructures.Lib
             public ListIterator(List<TItem> list)
             {
                 this.list = list;
+            }
+
+            public void Dispose()
+            {
             }
 
             public bool MoveNext()

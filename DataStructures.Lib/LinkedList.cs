@@ -1,8 +1,9 @@
 ﻿using DataStructures.Lib.Interfaces;
+using System.Collections;
 
 namespace DataStructures.Lib
 {
-    public class LinkedList<T> : ILinkedList<T>, IIterable<T>
+    public class LinkedList<T> : ILinkedList<T>, IEnumerable<T>
     {
         protected ILinkedNode<T>? _first;
         protected ILinkedNode<T>? _last;
@@ -166,18 +167,25 @@ namespace DataStructures.Lib
             return result;
         }
 
-        public IIterator<T> GetIterator()
+        public IEnumerator<T> GetEnumerator()
         {
             return new LinkedListIterator<T>(_first);
         }
 
-        private class LinkedListIterator<TItem> : IIterator<TItem>
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        private class LinkedListIterator<TItem> : IEnumerator<TItem>
         {
             private readonly ILinkedNode<TItem> _startNode;
 
             private ILinkedNode<TItem>? _currentNode;
 
             public TItem? Current { get; private set; }
+
+            object IEnumerator.Current => Current;
 
             public LinkedListIterator(ILinkedNode<TItem> node)
             {
@@ -198,6 +206,10 @@ namespace DataStructures.Lib
             public void Reset()
             {
                 _currentNode = _startNode;
+            }
+
+            public void Dispose()
+            {
             }
         }
     }

@@ -1,215 +1,203 @@
 ﻿using DataStructers.Tests;
 using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
+using System.Collections;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Drawing;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Xml.Linq;
 
 namespace DataStructers
 {
-    public interface ITestStateEmitter
+    static class CollectionHelpers
     {
-        void Subscribe(ITestStateHandler handler);
-
-        void Unsubscribe(ITestStateHandler handler);
-    }
-
-    public interface ITestStateHandler
-    {
-        void TestStateChanged(string testName, TestState state);
-    }
-
-    public enum TestState
-    {
-        Pending,
-        Success,
-        Failed
-    }
-
-    class ListTestsWithEvents : ITestsGroup, ITestStateEmitter
-    {
-        class TestResult
+        private class FileterIterable<T> : IEnumerable<T>
         {
-            public string Name { get; init; } = string.Empty;
+            private readonly IEnumerable<T> collection;
+            private readonly Predicate<T> predicate;
 
-            public TestState State { get; init; }
-        }
-
-        private readonly System.Collections.Generic.List<ITestStateHandler> _testStateHandlers = new System.Collections.Generic.List<ITestStateHandler>();
-
-        public string Title => "List tests";
-
-        public string[] GetTestList()
-        {
-            return new string[]
+            public FileterIterable(IEnumerable<T> collection, Predicate<T> predicate)
             {
-                nameof(IndexOfIntsInListTest),
-                nameof(NotIndexOfIntsInListTest),
-                nameof(ContainsIntsInListTest)
-            };
-        }
+                this.collection = collection;
+                this.predicate = predicate;
+            }
 
-        private Func<TestResult>[] GetTests()
-        {
-            return new Func<TestResult>[] { IndexOfIntsInListTest, NotIndexOfIntsInListTest, ContainsIntsInListTest };
-        }
-
-        public void Run()
-        {
-            foreach (var test in GetTests())
+            public IEnumerator<T> GetEnumerator()
             {
-                var result = test();
-                OnTestCompleted(result);
+                return new FilterIterator<T>(collection, predicate);
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
             }
         }
 
-        private TestResult IndexOfIntsInListTest()
+        private class FilterIterator<T> : IEnumerator<T>
         {
-            var list = new DataStructures.Lib.List<int>(2);
-            list.Add(1);
-            list.Add(2);
-            list.Add(3);
+            private readonly IEnumerable<T> _collection;
+            private readonly Predicate<T> _predicate;
 
-            bool isSuccess = list.IndexOf(1) == 0 && list.IndexOf(2) == 1 && list.IndexOf(3) == 2;
-            return new TestResult { Name = nameof(IndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
-        }
+            private IEnumerator<T> _iterator;
 
-        private TestResult NotIndexOfIntsInListTest()
-        {
-            var list = new DataStructures.Lib.List<int>(2);
-            list.Add(1);
-            list.Add(2);
-            list.Add(3);
+            public T? Current => _iterator.Current;
 
-            bool isSuccess = list.IndexOf(5) < 0;
-            return new TestResult { Name = nameof(NotIndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
-        }
+            object IEnumerator.Current => Current;
 
-        private TestResult ContainsIntsInListTest()
-        {
-            var list = new DataStructures.Lib.List<int>(2);
-            list.Add(1);
-            list.Add(2);
-            list.Add(3);
-
-            bool isSuccess = list.Contains(1) && list.Contains(2) && list.Contains(3);
-            return new TestResult { Name = nameof(ContainsIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
-        }
-
-        private void OnTestCompleted(TestResult result)
-        {
-            foreach (var handler in _testStateHandlers)
+            public FilterIterator(IEnumerable<T> collection, Predicate<T> predicate)
             {
-                handler.TestStateChanged(result.Name, result.State);
+                this._collection = collection;
+                this._predicate = predicate;
             }
-        }
 
-        public void Subscribe(ITestStateHandler handler)
-        {
-            _testStateHandlers.Add(handler);
-        }
-
-        public void Unsubscribe(ITestStateHandler handler)
-        {
-            _testStateHandlers.Remove(handler);
-        }
-    }
-
-    class ConsoleTestRenderer : ITestStateHandler
-    {
-        class TestView
-        {
-            public string? Name { get; init; }
-            public Point Position { get; init; }
-        }
-
-        private readonly ITestsGroup[] _testList;
-        private readonly System.Collections.Generic.List<TestView> _testViews = new System.Collections.Generic.List<TestView>();
-
-        public ConsoleTestRenderer(ITestsGroup[] testList)
-        {
-            this._testList = testList;
-        }
-
-        public void Show()
-        {
-            foreach (var testGroup in _testList)
+            public bool MoveNext()
             {
-                Console.BackgroundColor = ConsoleColor.Gray;
-                Console.ForegroundColor = ConsoleColor.Black;
-                Console.WriteLine(testGroup.Title);
-                Console.ResetColor();
+                if (_iterator == null) _iterator = _collection.GetEnumerator();
 
-                foreach (var test in ((ListTestsWithEvents)testGroup).GetTestList())
+                bool result = false;
+                do
                 {
-                    Console.Write("  ");
-                    Console.Write($"{test}: ");
-
-                    string? resultMsg = Enum.GetName(TestState.Pending);
-                    Console.BackgroundColor = ConsoleColor.Gray;
-                    Console.ForegroundColor = ConsoleColor.Black;
-                    if (Console.CursorLeft < 35)
+                    result = _iterator.MoveNext();
+                    if (result && _predicate(_iterator.Current))
                     {
-                        Console.SetCursorPosition(40, Console.CursorTop);
+                        return true;
                     }
+                } while (result);
 
-                    _testViews.Add(new TestView { Name = test, Position = new Point(Console.CursorLeft, Console.CursorTop) });
+                return false;
+            }
 
-                    Console.Write($"{resultMsg}");
-                    Console.ResetColor();
-                    Console.WriteLine(" ");
-                }
+            public void Reset()
+            {
+            }
+
+            public void Dispose()
+            {
             }
         }
 
-        public void TestStateChanged(string testName, TestState state)
+        public static IEnumerable<T> Filter<T>(this IEnumerable<T> list, Func<T, bool> func)
         {
-            var testView = _testViews.Find(view => view.Name == testName);
-            if (testView != null)
-            {
-                Point currentPos = new Point(Console.CursorLeft, Console.CursorTop);
-                Console.SetCursorPosition(testView.Position.X, testView.Position.Y);
+            return new FileterIterable<T>(list, item => func(item));
+        }
 
-                if (state == TestState.Success)
+        public static IEnumerable<T> Take<T>(this IEnumerable<T> iterable, int count)
+        {
+            int current = 0;
+            foreach (var item in iterable) {
+
+                if (current >= count) yield break;
+
+                yield return item;
+                current++;
+            }
+        }
+
+        public static IEnumerable<T> Take<T>(this IEnumerable<T> iterable, Func<T, bool> takeWhen)
+        {
+            int current = 0;
+            foreach (var item in iterable)
+            {
+                if (!takeWhen(item)) yield break;
+
+                yield return item;
+                current++;
+            }
+        }
+
+        public static IEnumerable<T> Skip<T>(this IEnumerable<T> iterable, int count)
+        {
+            int current = 0;
+            foreach(var item in iterable)
+            {
+                if (current >= count)
                 {
-                    Console.BackgroundColor = ConsoleColor.Green;
-                    Console.ForegroundColor = ConsoleColor.White;
+                    yield return item;
                 }
                 else
-                {
-                    Console.BackgroundColor = ConsoleColor.Red;
-                    Console.ForegroundColor = ConsoleColor.White;
-                }
-
-                Console.Write(Enum.GetName(state)?.ToUpper());
-
-                Console.SetCursorPosition(currentPos.X, currentPos.Y);
+                    current++;
             }
         }
     }
 
     internal class Program
     {
-        static void Main(string[] args)
+        class Person
         {
-            var list = new DataStructures.Lib.List<string>();
-            list.Add("Sam");
-            list.Add("Bill");
-            list.Add("Samm");
-            list.Add("John");
-            list.Add("Ted");
+            private int _id;
 
-            var iterator = list
-                .Take(3)
-                .Filter(item => item.StartsWith("Sa"))
-                .GetIterator();
 
-            while (iterator.MoveNext())
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int Age { get; set; }
+
+            //public override int GetHashCode()
+            //{
+            //    return HashCode.Combine(Id, Name, Age);
+            //}
+
+            public override bool Equals(object? obj)
             {
-                Console.WriteLine(iterator.Current);
+                if (obj == null) return false;
+                if (!(obj is Person)) return false;
+                if (ReferenceEquals(this, obj)) return true;
+
+                var other = obj as Person;
+                return Id == other.Id
+                    && Name.Equals(other.Name)
+                    && Age == other.Age;
+            }
+        }
+
+        class EqCompPerson : IEqualityComparer<Person>
+        {
+            public bool Equals(Person? x, Person? y)
+            {
+                if (x == y) return true;
+                return x.Id == y.Id
+                    && x.Name.Equals(y.Name)
+                    && x.Age == y.Age;
+
             }
 
+            public int GetHashCode([DisallowNull] Person obj)
+            {
+                return HashCode.Combine(obj.Id, obj.Name, obj.Age);
+            }
+        }
 
+        static void Main(string[] args)
+        {
+            var list = new DataStructures.Lib.List<Person>
+            {
+                new Person { Id = 1, Name = "Sam", Age = 21 },
+                new Person { Id = 2, Name = "Bill", Age = 23 },
+                new Person { Id = 3, Name = "Samuel", Age = 31 },
+                new Person { Id = 4, Name = "John", Age = 19 },
+                new Person { Id = 5, Name = "Ted", Age = 43 },
+                new Person { Id = 6, Name = "Ed", Age = 63 },
+                new Person { Id = 7, Name = "Zed", Age = 33 }
+            };
+
+            foreach (var item in list.Skip(2).Take(i => i.Age < 40))
+            {
+                Console.WriteLine(item.Name);
+            }
+
+            var dic = new System.Collections.Generic.Dictionary<Person, string>(new EqCompPerson());
+            var p = new Person { Id = 1, Name = "Sam", Age = 21 };
+            dic[p] = "Hello";
+            dic[p] = "Sam";
+
+            //--------------
+            var p2 = new Person { Id = 1, Name = "Sam", Age = 21 };
+            var value = dic[p2];
+            dic[p2] = "Sam2";
+        }
+
+        static void RunTests()
+        {
             var testGroup = new ListTestsWithEvents();
             var testRenderer = new ConsoleTestRenderer(new ITestsGroup[] { testGroup });
 
