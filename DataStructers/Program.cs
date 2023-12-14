@@ -1,141 +1,24 @@
-﻿using DataStructers.Tests;
-using DataStructers.Tests.Interfaces;
+﻿using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
-using System.Collections;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Xml.Linq;
 
 namespace DataStructers
 {
-    static class CollectionHelpers
-    {
-        private class FileterIterable<T> : IEnumerable<T>
-        {
-            private readonly IEnumerable<T> collection;
-            private readonly Predicate<T> predicate;
-
-            public FileterIterable(IEnumerable<T> collection, Predicate<T> predicate)
-            {
-                this.collection = collection;
-                this.predicate = predicate;
-            }
-
-            public IEnumerator<T> GetEnumerator()
-            {
-                return new FilterIterator<T>(collection, predicate);
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
-        }
-
-        private class FilterIterator<T> : IEnumerator<T>
-        {
-            private readonly IEnumerable<T> _collection;
-            private readonly Predicate<T> _predicate;
-
-            private IEnumerator<T> _iterator;
-
-            public T? Current => _iterator.Current;
-
-            object IEnumerator.Current => Current;
-
-            public FilterIterator(IEnumerable<T> collection, Predicate<T> predicate)
-            {
-                this._collection = collection;
-                this._predicate = predicate;
-            }
-
-            public bool MoveNext()
-            {
-                if (_iterator == null) _iterator = _collection.GetEnumerator();
-
-                bool result = false;
-                do
-                {
-                    result = _iterator.MoveNext();
-                    if (result && _predicate(_iterator.Current))
-                    {
-                        return true;
-                    }
-                } while (result);
-
-                return false;
-            }
-
-            public void Reset()
-            {
-            }
-
-            public void Dispose()
-            {
-            }
-        }
-
-        public static IEnumerable<T> Filter<T>(this IEnumerable<T> list, Func<T, bool> func)
-        {
-            return new FileterIterable<T>(list, item => func(item));
-        }
-
-        public static IEnumerable<T> Take<T>(this IEnumerable<T> iterable, int count)
-        {
-            int current = 0;
-            foreach (var item in iterable) {
-
-                if (current >= count) yield break;
-
-                yield return item;
-                current++;
-            }
-        }
-
-        public static IEnumerable<T> Take<T>(this IEnumerable<T> iterable, Func<T, bool> takeWhen)
-        {
-            int current = 0;
-            foreach (var item in iterable)
-            {
-                if (!takeWhen(item)) yield break;
-
-                yield return item;
-                current++;
-            }
-        }
-
-        public static IEnumerable<T> Skip<T>(this IEnumerable<T> iterable, int count)
-        {
-            int current = 0;
-            foreach(var item in iterable)
-            {
-                if (current >= count)
-                {
-                    yield return item;
-                }
-                else
-                    current++;
-            }
-        }
-    }
-
     internal class Program
     {
         class Person
         {
-            private int _id;
-
+            public int Mark { get; set; } = 1;
 
             public int Id { get; set; }
             public string Name { get; set; }
             public int Age { get; set; }
 
-            //public override int GetHashCode()
-            //{
-            //    return HashCode.Combine(Id, Name, Age);
-            //}
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Id, Name, Age);
+            }
 
             public override bool Equals(object? obj)
             {
@@ -148,6 +31,30 @@ namespace DataStructers
                     && Name.Equals(other.Name)
                     && Age == other.Age;
             }
+
+            public override string ToString()
+            {
+                return $"Id: {Id}, Name: {Name}, Age: {Age}. {Mark}";
+            }
+        }
+
+        class Customer
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public int Age { get; set; }
+
+            public System.Collections.Generic.List<Order> Orders { get; set; }
+
+            public override string ToString()
+            {
+                return $"Id: {Id}, Name: {Name}, Age: {Age} [CUSTOMER]";
+            }
+        }
+
+        class Order
+        {
+
         }
 
         class EqCompPerson : IEqualityComparer<Person>
@@ -158,7 +65,6 @@ namespace DataStructers
                 return x.Id == y.Id
                     && x.Name.Equals(y.Name)
                     && x.Age == y.Age;
-
             }
 
             public int GetHashCode([DisallowNull] Person obj)
@@ -169,31 +75,48 @@ namespace DataStructers
 
         static void Main(string[] args)
         {
-            var list = new DataStructures.Lib.List<Person>
+            var list = new System.Collections.Generic.List<Person>
             {
+                new Person { Id = 9, Name = "Alex", Age = 19 },
+                new Person { Id = 8, Name = "Alex", Age = 18 },
+                
                 new Person { Id = 1, Name = "Sam", Age = 21 },
                 new Person { Id = 2, Name = "Bill", Age = 23 },
                 new Person { Id = 3, Name = "Samuel", Age = 31 },
-                new Person { Id = 4, Name = "John", Age = 19 },
+                new Person { Id = 4, Name = "John", Age = 18 },
                 new Person { Id = 5, Name = "Ted", Age = 43 },
                 new Person { Id = 6, Name = "Ed", Age = 63 },
                 new Person { Id = 7, Name = "Zed", Age = 33 }
             };
 
-            foreach (var item in list.Skip(2).Take(i => i.Age < 40))
+            var list2 = new System.Collections.Generic.List<Person>
             {
-                Console.WriteLine(item.Name);
+                new Person { Id = 107, Name = "Ed", Age = 19, Mark = 100 },
+
+                new Person { Id = 8, Name = "Alex", Age = 18, Mark = 100 },
+
+                new Person { Id = 106, Name = "Ed", Age = 23, Mark = 100 },
+
+                new Person { Id = 5, Name = "Ted", Age = 43, Mark = 100 },
+                
+                new Person { Id = 100, Name = "Sam", Age = 30, Mark = 100 }
+            };
+
+            var ids = new System.Collections.Generic.List<int> {
+                107,8,106,5,100
+            };
+
+            var query = list2
+                .DistinctBy(p => p.Id)
+                .OrderBy(p => p.Name).ThenByDescending(p => p.Age)
+                .Intersect(list);
+                //.Select(p => new Customer() { Id = p.Id, Age = p.Age, Name = p.Name, Oreders = new System.Collections.Generic.List<Oreder>() });
+           // list.Add(new Person { Id = 8, Name = "Alex", Age = 18 });
+
+            foreach (var item in query)
+            {
+                Console.WriteLine(item);
             }
-
-            var dic = new System.Collections.Generic.Dictionary<Person, string>(new EqCompPerson());
-            var p = new Person { Id = 1, Name = "Sam", Age = 21 };
-            dic[p] = "Hello";
-            dic[p] = "Sam";
-
-            //--------------
-            var p2 = new Person { Id = 1, Name = "Sam", Age = 21 };
-            var value = dic[p2];
-            dic[p2] = "Sam2";
         }
 
         static void RunTests()
