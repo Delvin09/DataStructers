@@ -1,16 +1,20 @@
 ﻿using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DataStructers
 {
     internal class Program
     {
+        class MyException : Exception
+        {
+
+        }
+
         class Person
         {
-            public int Mark { get; set; } = 1;
-
             public int Id { get; set; }
             public string Name { get; set; }
             public int Age { get; set; }
@@ -34,27 +38,31 @@ namespace DataStructers
 
             public override string ToString()
             {
-                return $"Id: {Id}, Name: {Name}, Age: {Age}. {Mark}";
-            }
-        }
-
-        class Customer
-        {
-            public int Id { get; set; }
-            public string Name { get; set; }
-            public int Age { get; set; }
-
-            public System.Collections.Generic.List<Order> Orders { get; set; }
-
-            public override string ToString()
-            {
-                return $"Id: {Id}, Name: {Name}, Age: {Age} [CUSTOMER]";
+                return $"Id: {Id}, Name: {Name}, Age: {Age}";
             }
         }
 
         class Order
         {
+            public int Id { get; set; }
+            public Person Customer { get; set; }
+            public DataStructures.Lib.List<Product> Products { get; set; }
+        }
 
+        class Product
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public ProductCategory Category { get; set; }
+            public decimal Price { get; set; }
+            public int Count { get; set; }
+        }
+
+        class ProductCategory
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
         }
 
         class EqCompPerson : IEqualityComparer<Person>
@@ -73,13 +81,35 @@ namespace DataStructers
             }
         }
 
+        class UserOrderResult
+        {
+            public IEnumerable<Order> Orders { get; set; }
+            public Person User { get; set; }
+        }
+
+        class DisObj : IDisposable
+        {
+            //static DisObj()
+            //{
+            //    throw new NotImplementedException();
+            //}
+
+            ~DisObj()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Dispose()
+            {
+            }
+        }
+
         static void Main(string[] args)
         {
-            var list = new System.Collections.Generic.List<Person>
+            var users = new System.Collections.Generic.List<Person>
             {
                 new Person { Id = 9, Name = "Alex", Age = 19 },
                 new Person { Id = 8, Name = "Alex", Age = 18 },
-                
                 new Person { Id = 1, Name = "Sam", Age = 21 },
                 new Person { Id = 2, Name = "Bill", Age = 23 },
                 new Person { Id = 3, Name = "Samuel", Age = 31 },
@@ -89,33 +119,162 @@ namespace DataStructers
                 new Person { Id = 7, Name = "Zed", Age = 33 }
             };
 
-            var list2 = new System.Collections.Generic.List<Person>
+            var otherUsers = new DataStructures.Lib.List<Person>
             {
-                new Person { Id = 107, Name = "Ed", Age = 19, Mark = 100 },
-
-                new Person { Id = 8, Name = "Alex", Age = 18, Mark = 100 },
-
-                new Person { Id = 106, Name = "Ed", Age = 23, Mark = 100 },
-
-                new Person { Id = 5, Name = "Ted", Age = 43, Mark = 100 },
-                
-                new Person { Id = 100, Name = "Sam", Age = 30, Mark = 100 }
+                new Person { Id = 107, Name = "Ed", Age = 19 },
+                new Person { Id = 106, Name = "Ed", Age = 23 },
+                new Person { Id = 100, Name = "Sam", Age = 30 },
+                new Person { Id = 5, Name = "Ted", Age = 43 },
+                new Person { Id = 8, Name = "Alex", Age = 18 },
             };
 
             var ids = new System.Collections.Generic.List<int> {
-                107,8,106,5,100
+                107, 8, 106, 5, 100
             };
 
-            var query = list2
-                .DistinctBy(p => p.Id)
-                .OrderBy(p => p.Name).ThenByDescending(p => p.Age)
-                .Intersect(list);
-                //.Select(p => new Customer() { Id = p.Id, Age = p.Age, Name = p.Name, Oreders = new System.Collections.Generic.List<Oreder>() });
-           // list.Add(new Person { Id = 8, Name = "Alex", Age = 18 });
-
-            foreach (var item in query)
+            var categories = new DataStructures.Lib.List<ProductCategory>()
             {
-                Console.WriteLine(item);
+                new ProductCategory{ Id = 1, Name = "SmartPhone" },
+                new ProductCategory{ Id = 2, Name = "Notebook" },
+                new ProductCategory{ Id = 3, Name = "VideoCard" }
+            };
+
+            var products = new DataStructures.Lib.List<Product>()
+            {
+                new Product{ Id = 1, Name = "IPhone 10", Count = 100, Price = 799.99M, Category = categories[0] },
+                new Product{ Id = 2, Name = "IPhone 11", Count = 10, Price = 859.89M, Category = categories[0] },
+                new Product{ Id = 3, Name = "Samsung", Count = 50, Price = 669.19M, Category = categories[0] },
+
+                new Product{ Id = 4, Name = "Apple Air", Count = 6, Price = 1669.19M, Category = categories[1] },
+                new Product{ Id = 5, Name = "Asus Zenbook", Count = 21, Price = 1249.20M, Category = categories[1] },
+                new Product{ Id = 6, Name = "Lenovo", Count = 44, Price = 595.55M, Category = categories[1] },
+
+                new Product{ Id = 7, Name = "NVidia 3070", Count = 25, Price = 1200M, Category = categories[2] },
+                new Product{ Id = 8, Name = "NVidia 4090", Count = 9, Price = 2200.50M, Category = categories[2] },
+                new Product{ Id = 9, Name = "AMD Radeon", Count = 32, Price = 1100M, Category = categories[2] },
+            };
+
+            var orders = new DataStructures.Lib.List<Order>
+            {
+                new Order{ Id = 1, Customer = users[0], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[0], products[1], products[2]
+                    }
+                },
+                new Order{ Id = 2, Customer = users[0], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[1], products[2], products[3]
+                    }
+                },
+                new Order{ Id = 3, Customer = users[1], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[4]
+                    }
+                },
+                new Order{ Id = 4, Customer = users[2], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[4], products[5]
+                    }
+                },
+                new Order{ Id = 5, Customer = users[2], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[6]
+                    }
+                },
+                new Order{ Id = 4, Customer = users[3], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[6]
+                    }
+                },
+                new Order{ Id = 4, Customer = users[5], Products = new DataStructures.Lib.List<Product>
+                    {
+                        products[7], products[8]
+                    }
+                },
+            };
+
+            //foreach (var item in users.GroupJoin(orders, u => u.Id, o => o.Customer.Id, (user, order) => new UserOrderResult { Orders = order, User = user }))
+            //{
+            //    Console.WriteLine($"{item.User}");
+            //    foreach(var order in item.Orders)
+            //    {
+            //        Console.WriteLine($"{order.Id}");
+            //    }
+            //}
+
+            Console.WriteLine("Before Do");
+            try
+            {
+                DisObj a = new DisObj();
+                Do(users);
+            }
+            catch (Exception ex)
+            {
+                if (ex.InnerException != null)
+                {
+
+                }
+            }
+            Console.WriteLine("After Do");
+
+            //var query = otherUsers
+            //    .DistinctBy(p => p.Id)
+            //    .OrderBy(p => p.Name).ThenByDescending(p => p.Age)
+            //    .Intersect(users)
+            //    ;
+            //.Select(p => new Customer() { Id = p.Id, Age = p.Age, Name = p.Name, Oreders = new System.Collections.Generic.List<Oreder>() });
+            // list.Add(new Person { Id = 8, Name = "Alex", Age = 18 });
+
+            //foreach (var item in query)
+            //{
+            //    Console.WriteLine(item);
+            //}
+        }
+
+
+        static void Do(System.Collections.Generic.List<Person> users)
+        {
+            Console.WriteLine("Before in Do");
+            foreach (var user in users)
+            {
+                try
+                {
+                    var clonable = TryCast(user);
+                }
+                catch (InvalidCastException ex)
+                {
+                    Console.WriteLine("Something goes wrong!");
+                }
+                catch (NullReferenceException ex)
+                {
+                    Console.WriteLine("Null found!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Error!");
+                    throw;
+                }
+                finally
+                {
+                    Console.WriteLine("After in Do");
+                    throw new Exception("Finally ex");
+                }
+            }
+        }
+
+        static ICloneable TryCast(Person person)
+        {
+            Console.WriteLine("Before TryCast");
+
+            try
+            {
+                if (person.Age < 100)
+                    throw new MyException();
+                return person as ICloneable;
+            }
+            finally
+            {
+                Console.WriteLine("After TryCast");
             }
         }
 
