@@ -6,6 +6,8 @@
 
         void Run();
 
-        //event Action<string, TestState> TestCompleted;
+        IEnumerable<string> GetTestList();
+
+        event Action<string, TestState>? TestCompleted;
     }
 }

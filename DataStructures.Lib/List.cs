@@ -37,6 +37,12 @@ namespace DataStructures.Lib
             }
         }
 
+        /// <summary>
+        /// Get list item by index in the list.
+        /// </summary>
+        /// <param name="index">Zero based index in the list</param>
+        /// <returns>The list item.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">throws when index is out of range (< 0 or >= Count)</exception>
         public T? this[int index]
         {
             get
@@ -84,6 +90,12 @@ namespace DataStructures.Lib
             Count++;
         }
 
+        /// <summary>
+        /// Get list item by index in the list.
+        /// </summary>
+        /// <param name="index">Zero-based index in the list</param>
+        /// <returns>The list item.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">throws when index is out of range (< 0 or >= Count)</exception>
         public void Insert(int index, T? value)
         {
             if (index < 0 || index > Count)

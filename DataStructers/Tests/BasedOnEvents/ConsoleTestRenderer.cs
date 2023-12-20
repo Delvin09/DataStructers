@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace DataStructers
 {
-    class ConsoleTestRenderer : ITestStateHandler
+    class ConsoleTestRenderer
     {
         class TestView
         {
@@ -17,6 +17,7 @@ namespace DataStructers
         public ConsoleTestRenderer(ITestsGroup[] testList)
         {
             this._testList = testList;
+            foreach (var test in _testList) test.TestCompleted += TestStateChanged;
         }
 
         public void Show()
@@ -28,7 +29,7 @@ namespace DataStructers
                 Console.WriteLine(testGroup.Title);
                 Console.ResetColor();
 
-                foreach (var test in ((ListTestsWithEvents)testGroup).GetTestList())
+                foreach (var test in testGroup.GetTestList())
                 {
                     Console.Write("  ");
                     Console.Write($"{test}: ");

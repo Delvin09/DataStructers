@@ -67,6 +67,11 @@ namespace DataStructers.Tests
             Console.WriteLine(" ");
         }
 
+        public IEnumerable<string> GetTestList()
+        {
+            throw new NotImplementedException();
+        }
+
         public event Action<string, TestState> TestCompleted;
     }
 }
