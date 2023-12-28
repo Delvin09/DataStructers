@@ -1,6 +1,7 @@
 ﻿using DataStructers.Tests;
 using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
+using System.Reflection;
 
 namespace DataStructers
 {
@@ -8,7 +9,7 @@ namespace DataStructers
     {
         static void Main(string[] args)
         {
-            RunTests(false);
+            RunTests(true);
         }
 
         static void RunTests(bool withEvents)

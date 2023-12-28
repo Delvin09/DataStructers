@@ -1,60 +1,34 @@
 ﻿using DataStructers.Tests.Interfaces;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace DataStructers
 {
+    [System.AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = false)]
+    class TestAttribute : Attribute
+    {
+        public TestAttribute()
+        {
+        }
+    }
+
     class ListTestsWithEvents : ITestsGroup
     {
         public string Title => "List tests";
 
         public IEnumerable<string> GetTestList()
         {
-            yield return nameof(IndexOfIntsInListTest);
-            yield return nameof(NotIndexOfIntsInListTest);
-            yield return nameof(ContainsIntsInListTest);
-            yield return nameof(NotContainsIntsInListTest);
-            yield return nameof(ContainsObjectsInListTest);
-            yield return nameof(NotContainsObjectsInListTest);
-            yield return nameof(IndexOfObjectsInListTest);
-            yield return nameof(NotIndexOfObjectsInListTest);
-            yield return nameof(RemoveFromListTest);
-            yield return nameof(RemoveAtFromListTest);
-            yield return nameof(AddToListTest);
-            yield return nameof(InsertToListTest);
-            yield return nameof(GetOutOfIndexTest);
-            yield return nameof(AddNullToListTest);
-            yield return nameof(InsertNullToListTest);
-            yield return nameof(RemoveNullFromListTest);
-            yield return nameof(FindNullInListTest);
-            yield return nameof(GetArrayFromListTest);
-            yield return nameof(ClearListTest);
-            yield return nameof(ReverseListTest);
+            var methods = GetType().GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            return methods.Where(m => m.GetCustomAttribute<TestAttribute>() != null).Select(m => m.Name);
         }
 
         private Func<TestResult>[] GetTests()
         {
-            return new Func<TestResult>[]
-            {
-                IndexOfIntsInListTest
-                , NotIndexOfIntsInListTest
-                , ContainsIntsInListTest
-                , NotContainsIntsInListTest
-                , ContainsObjectsInListTest
-                , NotContainsObjectsInListTest
-                , IndexOfObjectsInListTest
-                , NotIndexOfObjectsInListTest
-                , RemoveFromListTest
-                , RemoveAtFromListTest
-                , AddToListTest
-                , InsertToListTest
-                , GetOutOfIndexTest
-                , AddNullToListTest
-                , InsertNullToListTest
-                , RemoveNullFromListTest
-                , FindNullInListTest
-                , GetArrayFromListTest
-                , ClearListTest
-                , ReverseListTest
-            };
+            var methods = GetType().GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            return methods
+                .Where(m => m.GetCustomAttribute<TestAttribute>() != null)
+                .Select(m => new Func<TestResult>(() => (TestResult)m.Invoke(this, null)))
+                .ToArray();
         }
 
         public void Run()
@@ -71,6 +45,7 @@ namespace DataStructers
             TestCompleted?.Invoke(result.Name, result.State);
         }
 
+        [Test]
         private TestResult IndexOfIntsInListTest()
         {
             var list = new DataStructures.Lib.List<int>(2);
@@ -82,6 +57,7 @@ namespace DataStructers
             return new TestResult { Name = nameof(IndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
         }
 
+        [Test]
         private TestResult NotIndexOfIntsInListTest()
         {
             var list = new DataStructures.Lib.List<int>(2);
@@ -93,6 +69,7 @@ namespace DataStructers
             return new TestResult { Name = nameof(NotIndexOfIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
         }
 
+        [Test]
         private TestResult ContainsIntsInListTest()
         {
             var list = new DataStructures.Lib.List<int>(2);
@@ -104,6 +81,7 @@ namespace DataStructers
             return new TestResult { Name = nameof(ContainsIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
         }
 
+        [Test]
         private TestResult NotContainsIntsInListTest()
         {
             var list = new DataStructures.Lib.List<int>(2);
@@ -115,6 +93,7 @@ namespace DataStructers
             return new TestResult { Name = nameof(NotContainsIntsInListTest), State = isSuccess ? TestState.Success : TestState.Failed };
         }
 
+        [Test]
         private TestResult ContainsObjectsInListTest()
         {
             var list = new DataStructures.Lib.List<PersonTest>(2);

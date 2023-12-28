@@ -11,4 +11,10 @@
     <ProjectReference Include="..\DataStructures.Lib\DataStructures.Lib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="CoolTest.Abstarctions">
+      <HintPath>..\..\CoolTestFramework\publish\CoolTest.Abstarctions.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

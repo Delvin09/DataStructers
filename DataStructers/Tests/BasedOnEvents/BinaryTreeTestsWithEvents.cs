@@ -1,4 +1,5 @@
-﻿using DataStructers.Tests.Interfaces;
+﻿using CoolTest.Abstarctions;
+using DataStructers.Tests.Interfaces;
 using DataStructures.Lib;
 
 namespace DataStructers
@@ -93,5 +94,66 @@ namespace DataStructers
         }
 
         public event Action<string, TestState>? TestCompleted;
+    }
+
+
+    [TestGroup(Name = "Binary tree tests")]
+    public class BinaryTree_Tests
+    {
+        [CoolTest.Abstarctions.Test]
+        public void AddToTree()
+        {
+            var tree = new BinaryTree<int>();
+            tree.Add(1);
+            tree.Add(2);
+            tree.Add(3);
+            tree.Add(4);
+
+            Assert.AreEqual(tree.Count, 3);
+            Assert.AreEqual(tree.Root?.Key, 1);
+        }
+
+        [CoolTest.Abstarctions.Test]
+        private void ContainsInTree()
+        {
+            var tree = new BinaryTree<int>();
+            tree.Add(1);
+            tree.Add(2);
+            tree.Add(3);
+            tree.Add(4);
+
+            var isSuccess = tree.Count == 4 && tree.Contains(2) && !tree.Contains(-2);
+            //return new TestResult { Name = nameof(ContainsInTree), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
+
+        [CoolTest.Abstarctions.Test]
+        private void ClearTree()
+        {
+            var tree = new BinaryTree<int>();
+            tree.Add(1);
+            tree.Add(2);
+            tree.Add(3);
+            tree.Add(4);
+
+            tree.Clear();
+
+            var isSuccess = tree.Count == 0 && tree.Root == null;
+            //return new TestResult { Name = nameof(ClearTree), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
+
+        [CoolTest.Abstarctions.Test]
+        private void TreeToArray()
+        {
+            var tree = new BinaryTree<int>();
+            tree.Add(3);
+            tree.Add(1);
+            tree.Add(4);
+            tree.Add(2);
+
+            var array = tree.ToArray();
+
+            var isSuccess = tree.Count == 4 && array[0] == 1 && array[1] == 2 && array[2] == 3 && array[3] == 4;
+            //return new TestResult { Name = nameof(TreeToArray), State = isSuccess ? TestState.Success : TestState.Failed };
+        }
     }
 }
